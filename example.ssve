@@ -9,3 +9,5 @@ focused_3 ishkar 2:37.00 2:48.00
 win trash 6:53.00 7:00.00
 ===timeline===
 ishkar_timer focused_1 focused_2 focused_3 win
+===options===
+-c:a flac -c:v rawvideo
