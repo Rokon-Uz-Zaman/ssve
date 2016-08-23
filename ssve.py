@@ -15,6 +15,9 @@ def parse_clip_line(line, clips):
 def parse_timeline(line, timeline):
     timeline['order'] = line.split(' ')
 
+def parse_options(line, options):
+    options['encode'] = line
+
 def parse_file(filename):
     print('Parsing {}'.format(filename))
     parts = {}
@@ -22,7 +25,8 @@ def parse_file(filename):
         phase = ''
         phase_func = {'sources': parse_source_line,
                       'clips': parse_clip_line,
-                      'timeline': parse_timeline}
+                      'timeline': parse_timeline,
+                      'options': parse_options}
         for line in f:
             if line[:3] == '===':
                 phase = line.replace('=', '').rstrip()
@@ -51,6 +55,11 @@ if __name__ == '__main__':
         outname = os.path.splitext(sys.argv[1])[0]
         print(parts)
 
+        reencode = '-c:a aac -c:v h264'
+        if 'options' in parts.keys():
+            reencode = parts['options']['encode']
+
+
         if not os.path.exists('clips'):
             os.makedirs('clips')
 
@@ -58,15 +67,16 @@ if __name__ == '__main__':
             clip = parts['clips'][clip_name]
             source = parts['sources'][clip['source']]
             dur = duration(clip['start'], clip['end'])
-            command = 'ffmpeg -ss {start} -t {duration} -i "{source}" clips/{clip}.mp4'.format(source=source,
+            command = 'ffmpeg -ss {start} -t {duration} -i "{source}" {reencode} clips/{clip}.mkv'.format(source=source,
                                                                                                 start=clip['start'],
                                                                                                 duration=dur,
+                                                                                                reencode=reencode,
                                                                                                 clip=clip_name)
             print(command)
             os.system(command)
 
         with open('clips/concat.txt', 'w') as f:
             for clip in parts['timeline']['order']:
-                f.write("file '{}.mp4'\n".format(clip))
-        command = 'ffmpeg -f concat -i clips/concat.txt {}.mp4'.format(outname)
+                f.write("file '{}.mkv'\n".format(clip))
+        command = 'ffmpeg -f concat -i clips/concat.txt -c:a aac -c:v h264 {filename}.mp4'.format(filename=outname)
         os.system(command)
